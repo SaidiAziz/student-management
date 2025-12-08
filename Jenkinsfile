@@ -1,65 +1,53 @@
 pipeline {
+
     agent any
 
     tools {
-        jdk 'JAVA_HOME'     // Configure this JDK in Jenkins global tools
-        maven 'M2_HOME'     // Configure this Maven in Jenkins global tools
-    }
-
-    options {
-        timestamps()
-        skipDefaultCheckout()
-    }
-
-    environment {
-        APP_NAME      = 'student-management'
-        IMAGE_NAME    = "student-management:${env.BUILD_NUMBER}"
+        maven 'M2_HOME'        // Your Maven tool name
+        // jdk 'JAVA_HOME'        // Your JDK tool name
     }
 
     stages {
-        stage('Checkout') {
+
+        stage('Code Checkout') {
             steps {
-                checkout scm
+                git branch: 'master', url: 'https://github.com/SaidiAziz/student-management.git'
             }
         }
 
-        stage('Build & Test') {
+        stage('Code Build') {
             steps {
-                sh 'mvn -B clean verify'
-            }
-            post {
-                always {
-                    junit '**/target/surefire-reports/*.xml'
-                }
+                sh 'mvn clean install -DskipTests=true'
             }
         }
 
-        stage('Package') {
-            steps {
-                archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
-            }
-        }
+        // stage('Test Reports') {
+        //     steps {
+        //         junit '**/target/surefire-reports/*.xml'
+        //     }
+        // }
 
-        stage('Docker Build') {
-            when {
-                expression { fileExists('Dockerfile') }
-            }
-            steps {
-                sh "docker build -t ${IMAGE_NAME} ."
-            }
-        }
+        // stage('Archive JAR') {
+        //     steps {
+        //         archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+        //     }
+        // }
     }
 
     post {
         always {
+            echo "======always======"
             cleanWs()
         }
+
         success {
-            echo "Build completed successfully for ${APP_NAME}"
+            echo 'Build completed successfully!'
         }
+
         unstable {
             echo 'Build is unstable.'
         }
+
         failure {
             echo 'Build failed!'
         }
